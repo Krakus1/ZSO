@@ -23,4 +23,18 @@ int main() {
     for (i = 0; i < 1; i++) {
         printf("Pojazd numer %f: %f, %f, %f, %f, %f, %f\n", cars[i][0], cars[i][1], cars[i][2], cars[i][3], cars[i][4], cars[i][5], cars[i][6]);
     }
+
+    for (i = 0; i< 1; i++)
+    {
+        cars[i][1] = cars[i][1] - cars[i][4];
+        cars[i][2] = cars[i][2] - cars[i][5];
+        cars[i][3] = cars[i][3] - cars[i][6];
+    }
+
+    printf("po pierwszej sekundzie jazdy:");
+    printf("nrPojazdu|paliwo|smar|plynChlodniczy|zuzyciePaliwa|zuzycieSmaru|zuzyciePlynuChlodniczego|\n");
+    for (i = 0; i < 1; i++) {
+        printf("Pojazd numer %f: %f, %f, %f, %f, %f, %f\n", cars[i][0], cars[i][1], cars[i][2], cars[i][3], cars[i][4], cars[i][5], cars[i][6]);
+    }
+
 }
