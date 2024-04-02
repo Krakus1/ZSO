@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
+#include "projekt.h"
 
 double** createCars() {
     // Alokuje pamięć dla tablicy 10x7
@@ -11,6 +12,12 @@ double** createCars() {
     // Wypełniam tablicę startowymi
     cars[0][0]=1;	cars[0][1]=100;	cars[0][2]=110; cars[0][3]=50; cars[0][4]=5; cars[0][5]=2.5; cars[0][6]=1.25;
 
+    int i;
+    printf("nrPojazdu|paliwo|smar|plynChlodniczy|zuzyciePaliwa|zuzycieSmaru|zuzyciePlynuChlodniczego|\n");
+    for (i = 0; i < 1; i++) {
+        printf("Pojazd numer %f: %f, %f, %f, %f, %f, %f\n", cars[i][0], cars[i][1], cars[i][2], cars[i][3], cars[i][4], cars[i][5], cars[i][6]);
+    }
+    
     return cars;
 }
 
@@ -18,23 +25,25 @@ double** createCars() {
 int main() {
     double** cars = createCars();
 
-    int i;
-    printf("nrPojazdu|paliwo|smar|plynChlodniczy|zuzyciePaliwa|zuzycieSmaru|zuzyciePlynuChlodniczego|\n");
-    for (i = 0; i < 1; i++) {
-        printf("Pojazd numer %f: %f, %f, %f, %f, %f, %f\n", cars[i][0], cars[i][1], cars[i][2], cars[i][3], cars[i][4], cars[i][5], cars[i][6]);
-    }
+    moveCars(cars);
+}
 
-    for (i = 0; i< 1; i++)
+void moveCars(double **cars)
+{
+    for (int t = 0; t < 20; t++)
     {
-        cars[i][1] = cars[i][1] - cars[i][4];
-        cars[i][2] = cars[i][2] - cars[i][5];
-        cars[i][3] = cars[i][3] - cars[i][6];
-    }
+        for (int i = 0; i < 1; i++)
+        {
+            cars[i][1] = cars[i][1] - cars[i][4];
+            cars[i][2] = cars[i][2] - cars[i][5];
+            cars[i][3] = cars[i][3] - cars[i][6];
+        }
 
-    printf("po pierwszej sekundzie jazdy:");
-    printf("nrPojazdu|paliwo|smar|plynChlodniczy|zuzyciePaliwa|zuzycieSmaru|zuzyciePlynuChlodniczego|\n");
-    for (i = 0; i < 1; i++) {
-        printf("Pojazd numer %f: %f, %f, %f, %f, %f, %f\n", cars[i][0], cars[i][1], cars[i][2], cars[i][3], cars[i][4], cars[i][5], cars[i][6]);
+        printf("sekunda jazdy:%d\n", t);
+        printf("nrPojazdu|paliwo|smar|plynChlodniczy|zuzyciePaliwa|zuzycieSmaru|zuzyciePlynuChlodniczego|\n");
+        for (int i = 0; i < 1; i++)
+        {
+            printf("Pojazd numer %f: %f, %f, %f, %f, %f, %f\n", cars[i][0], cars[i][1], cars[i][2], cars[i][3], cars[i][4], cars[i][5], cars[i][6]);
+        }
     }
-
 }

@@ -1,1 +1,14 @@
 Mamy 40 samchodów i 2 jednostanowiskowe stacj benzynowe i samochód pomocy na których można kupić olej, paliwo i płyn chłodzący niezbędne do jazdy. Wszystkie samochody jeżdżą sobie, ale współpracują z układami spalania paliwa, smarowania silnika i chłodzenia, które mogą zgłosić, że brakuje któregość z płynów. Jeżeli taki meldunek się pojawi, to samochód musi niezwłocznie udać się na stację i uzupełnienie jednego z płynów. Jeżeli samochod nie zdąży dojechać do stacji to staje, zgłasza awarię i czeka na pomoc. Samochód pomocy przyjeżdża, następuje tankowanie i jazda. Każdy samochód kończy jazdę jak wykona minimum 3 tankowania dowolnego płynu.
+
+wlasne zalozenia
+1. pojazdy maja startowa zawartosc kazdego z plynow
+2. pojazdy posiadaja na starcie ustalona ilosc zuzywanych plynow co 1 tura
+3. 
+
+
+
+tablica z danymi:
+nrPojazdu|paliwo|smar|plynChlodniczy|zuzyciePaliwa|zuzycieSmaru|zuzyciePlynuChlodniczego|
+1 | 100 | 110 | 50 | 5 | 2.5 | 1.25 |
+
+
