@@ -4,11 +4,20 @@
 #include <unistd.h>
 #include <time.h>
 
-#define NUM_CARS 2
+#define NUM_CARS 40
 #define NUM_STATIONS 2
 #define MIN_REFUEL 3
 #define MAX_DISTANCE 5
 #define FUEL_THRESHOLD 30
+
+// Makro do kontrolowania wyświetlania komunikatów debugujących
+#define DEBUG 0
+
+#if DEBUG
+#define LOG(...) printf(__VA_ARGS__)
+#else
+#define LOG(...)
+#endif
 
 pthread_mutex_t stations_mutex[NUM_STATIONS];
 pthread_cond_t stations_cond[NUM_STATIONS];
@@ -30,7 +39,7 @@ car_t *waiting_car = NULL;
 void* car_thread(void *arg) {
     car_t *car = (car_t *)arg;
 
-    printf("Samochód %d: Rozpoczynam jazdę\n", car->car_id);
+    LOG("Samochód %d: Rozpoczynam jazdę\n", car->car_id);
 
     while (car->refuels < MIN_REFUEL) {
         sleep(1);
@@ -43,13 +52,13 @@ void* car_thread(void *arg) {
         // Oddalanie się od stacji
         if (car->distance_to_station < MAX_DISTANCE && car->fuel > FUEL_THRESHOLD) {
             car->distance_to_station++;
-            printf("Samochód %d: Oddalam się od stacji, odległość: %d\n", car->car_id, car->distance_to_station);
+            LOG("Samochód %d: Oddalam się od stacji, odległość: %d\n", car->car_id, car->distance_to_station);
         }
 
         // Przybliżanie się do stacji, gdy paliwo jest niskie
         if (car->fuel <= FUEL_THRESHOLD) {
             car->distance_to_station--;
-            printf("Samochód %d: Przybliżam się do stacji, odległość: %d\n", car->car_id, car->distance_to_station);
+            LOG("Samochód %d: Przybliżam się do stacji, odległość: %d\n", car->car_id, car->distance_to_station);
             if (car->distance_to_station <= 0) {
                 // Szukanie dostępnej stacji
                 int refueled = 0;
@@ -59,26 +68,26 @@ void* car_thread(void *arg) {
                     clock_gettime(CLOCK_REALTIME, &ts);
                     ts.tv_sec += 2;
 
-                    printf("Samochód %d: Czekam na stację %d\n", car->car_id, i);
+                    LOG("Samochód %d: Czekam na stację %d\n", car->car_id, i);
                     int res = pthread_cond_timedwait(&stations_cond[i], &stations_mutex[i], &ts);
-                    if (res == 110) {
-                        printf("Samochód %d: Korzystam ze stacji %d\n", car->car_id, i);
+                    if (res == 0) {
+                        LOG("Samochód %d: Korzystam ze stacji %d\n", car->car_id, i);
 
                         // Uzupełnienie płynów
-                        car->fuel = 600;
-                        car->oil = 600;
-                        car->coolant = 600;
+                        car->fuel = 100;
+                        car->oil = 100;
+                        car->coolant = 100;
 
                         car->refuels++;
                         refueled = 1;
 
-                        printf("Samochód %d: Zatankowałem na stacji %d, refuels: %d\n", car->car_id, i, car->refuels);
+                        LOG("Samochód %d: Zatankowałem na stacji %d, refuels: %d\n", car->car_id, i, car->refuels);
 
                         pthread_cond_signal(&stations_cond[i]);
                         pthread_mutex_unlock(&stations_mutex[i]);
                         break;
                     } else {
-                        printf("Samochód %d: Nie udało się uzyskać dostępu do stacji %d, res: %d\n", car->car_id, i, res);
+                        LOG("Samochód %d: Nie udało się uzyskać dostępu do stacji %d, res: %d\n", car->car_id, i, res);
                     }
                     pthread_mutex_unlock(&stations_mutex[i]);
                 }
@@ -88,19 +97,19 @@ void* car_thread(void *arg) {
                     pthread_mutex_lock(&helper_mutex);
                     waiting_car = car;
                     car->is_waiting = 1;
-                    printf("Samochód %d: Awaria, czekam na pomoc\n", car->car_id);
+                    LOG("Samochód %d: Awaria, czekam na pomoc\n", car->car_id);
                     pthread_cond_wait(&helper_cond, &helper_mutex);
                     car->is_waiting = 0;
                     pthread_mutex_unlock(&helper_mutex);
 
                     car->refuels++;
-                    printf("Samochód %d: Naprawiony przez pomoc, refuels: %d\n", car->car_id, car->refuels);
+                    LOG("Samochód %d: Naprawiony przez pomoc, refuels: %d\n", car->car_id, car->refuels);
                 }
             }
         }
     }
 
-    printf("Samochód %d: Zakończyłem jazdę\n", car->car_id);
+    LOG("Samochód %d: Zakończyłem jazdę\n", car->car_id);
     return NULL;
 }
 
@@ -112,15 +121,15 @@ void* helper_thread(void *arg) {
         }
 
         car_t *car = waiting_car;
-        printf("Samochód pomocy: Otrzymałem zgłoszenie od samochodu %d\n", car->car_id);
+        LOG("Samochód pomocy: Otrzymałem zgłoszenie od samochodu %d\n", car->car_id);
         sleep(2);
 
         // Uzupełnienie płynów
-        car->fuel = 600;
-        car->oil = 600;
-        car->coolant = 600;
+        car->fuel = 100;
+        car->oil = 100;
+        car->coolant = 100;
 
-        printf("Samochód pomocy: Samochód %d zatankowany\n", car->car_id);
+        LOG("Samochód pomocy: Samochód %d zatankowany\n", car->car_id);
         waiting_car = NULL;
         pthread_cond_signal(&helper_cond);
         pthread_mutex_unlock(&helper_mutex);
@@ -145,9 +154,9 @@ int main() {
     // Tworzenie wątków samochodów
     for (int i = 0; i < NUM_CARS; i++) {
         cars[i].car_id = i + 1;
-        cars[i].fuel = 600;
-        cars[i].oil = 600;
-        cars[i].coolant = 600;
+        cars[i].fuel = 100;
+        cars[i].oil = 100;
+        cars[i].coolant = 100;
         cars[i].refuels = 0;
         cars[i].is_waiting = 0;
         cars[i].distance_to_station = MAX_DISTANCE;
