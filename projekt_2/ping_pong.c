@@ -7,39 +7,67 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <stdint.h>
+#include <sys/stat.h>
 #include "ball.h"
 
-#define SHM_NAME "/ball_shm"
-#define PIPE_NAME "/tmp/ball_pipe"
-#define NUM_PROCESSES 4
+#define SHM_NAME "/my_ball_shm"
 
 SharedMemory *shm;
-
-void handle_signal(int sig) {
-    // Placeholder for signal handling
-}
+pid_t pids[NUM_PROCESSES];  // Definicja zmiennej `pids`
 
 void create_shared_memory() {
+    shm_unlink(SHM_NAME);
+
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, sizeof(SharedMemory));
+    if (shm_fd == -1) {
+        perror("shm_open");
+        exit(1);
+    }
+    if (ftruncate(shm_fd, sizeof(SharedMemory)) == -1) {
+        perror("ftruncate");
+        close(shm_fd);
+        exit(1);
+    }
     shm = mmap(0, sizeof(SharedMemory), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (shm == MAP_FAILED) {
+        perror("mmap");
+        close(shm_fd);
+        exit(1);
+    }
     memset(shm, 0, sizeof(SharedMemory));
-    pthread_mutex_init(&shm->mutex, NULL);
+    pthread_mutexattr_t mutex_attr;
+    pthread_mutexattr_init(&mutex_attr);
+    pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
+    pthread_mutex_init(&shm->mutex, &mutex_attr);
     sem_init(&shm->sem, 1, 0);
+
+    if (fchmod(shm_fd, 0666) == -1) {
+        perror("fchmod");
+        close(shm_fd);
+        exit(1);
+    }
+    close(shm_fd);
 }
 
 void delete_shared_memory() {
-    munmap(shm, sizeof(SharedMemory));
-    shm_unlink(SHM_NAME);
+    if (munmap(shm, sizeof(SharedMemory)) == -1) {
+        perror("munmap");
+    }
+    if (shm_unlink(SHM_NAME) == -1) {
+        perror("shm_unlink");
+    }
 }
 
 int main() {
-    pid_t pids[NUM_PROCESSES];
     pthread_t control_thread;
 
     create_shared_memory();
 
-    // Tworzenie procesów
+    // Ustawienie logowania na true lub false
+    set_logging(1);  // Włączanie logowania
+    // set_logging(0);  // Wyłączanie logowania
+
     for (int i = 0; i < NUM_PROCESSES; ++i) {
         if ((pids[i] = fork()) == 0) {
             process_func((void*)(intptr_t)i);
@@ -47,27 +75,33 @@ int main() {
         }
     }
 
-    // Uruchomienie wątku kontrolnego
     pthread_create(&control_thread, NULL, control_func, NULL);
 
-    // Wrzuć kilka piłeczek do systemu
     for (int i = 0; i < MAX_BALLS; ++i) {
+        
         pthread_mutex_lock(&shm->mutex);
         if (shm->count < MAX_BALLS) {
             Ball ball = {i, 0, 0, 1};
             shm->balls[shm->count++] = ball;
             sem_post(&shm->sem);
+            if (logging_enabled) {
+                printf("Added ball %d, total balls: %d\n", i, shm->count);
+            }
+        } else {
+            if (logging_enabled) {
+                printf("Maximum number of balls reached: %d\n", shm->count);
+            }
+            
         }
+        sem_post(&shm->sem);
         pthread_mutex_unlock(&shm->mutex);
-        sleep(1); // Daje czas na przetworzenie piłeczek
+        sleep(1);
     }
 
-    // Czekanie na zakończenie procesów
     for (int i = 0; i < NUM_PROCESSES; ++i) {
         waitpid(pids[i], NULL, 0);
     }
 
-    // Czekanie na zakończenie wątku kontrolnego
     pthread_join(control_thread, NULL);
 
     delete_shared_memory();
